@@ -156,6 +156,7 @@ const ShoppingCart = () => {
               transition={{ duration: 0.3 }}
               className="card bg-base-100 shadow-lg p-12 text-center"
             >
+              
               <div className="flex flex-col items-center gap-4">
                 <ShoppingBasket className="w-16 h-16 text-base-content/20" />
                 <h3 className="text-xl font-bold">Su carrito está vacío</h3>

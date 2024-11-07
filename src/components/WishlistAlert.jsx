@@ -4,7 +4,7 @@ import { CheckCircle, XCircle } from 'lucide-react';
 
 const WishlistAlert = ({ alerts }) => {
   return (
-    <div className="fixed top-56 left-3/4 translate-x-24 z-50 space-y-2">
+    <div className=" z-50 space-y-2 rounded-xl  fixed top-56 right-4  space-x-3">
       <AnimatePresence>
         {alerts.map((alert, index) => (
           <motion.div

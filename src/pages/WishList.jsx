@@ -81,14 +81,14 @@ const WishList = ({ onAddToCart }) => {
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: 20 }}
           className={`bg-${
-            notification.type === 'stock-limit' ? 'red-500 ' : 'green-500 '
+            notification.type === 'stock-limit' ? 'red-500 ' : 'green-600 '
           }  px-6 py-4 rounded-xl shadow-xl fixed top-32 right-4  flex items-center space-x-3`}
         >
           <div
             className={`p-3 rounded-full ${
               notification.type === 'stock-limit'
                 ? 'bg-red-600 0'
-                : 'bg-green-600 '
+                : 'bg-green-700 '
             }`}
           >
             {notification.type === 'stock-limit' ? (

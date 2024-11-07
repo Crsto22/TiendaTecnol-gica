@@ -13,6 +13,7 @@ const cartAtom = atom(
 const useCart = () => {
   const [cartItems, setCartItems] = useAtom(cartAtom);
   const [isInitialized, setIsInitialized] = useState(false);
+  const [showStockLimitAlert, setShowStockLimitAlert] = useState(false);
 
   // Effect to load initial data
   useEffect(() => {
@@ -23,7 +24,7 @@ const useCart = () => {
         setCartItems(parsedItems);
       }
     } catch (error) {
-      console.error('Error loading from localStorage:', error);
+      alert('Error loading from localStorage:', error);
     }
     setIsInitialized(true);
   }, []);
@@ -35,38 +36,48 @@ const useCart = () => {
         localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cartItems));
         console.log('Cart saved:', cartItems);
       } catch (error) {
-        console.error('Error saving to localStorage:', error);
+        alert('Error saving to localStorage:', error);
       }
     }
   }, [cartItems, isInitialized]);
 
   // Function to add items to cart with quantity
   const handleAddToCart = (product, quantity = 1) => {
+    let stockLimitReached = false;
+  
     setCartItems((prevCartItems) => {
       const existingItem = prevCartItems.find((item) => item.id === product.id);
-      
+  
       if (existingItem) {
-        // Check if adding the quantity exceeds the stock
+        // Verificar si la cantidad solicitada excede el stock disponible
         const newQuantity = existingItem.quantity + quantity;
         if (newQuantity > product.stock) {
-          console.warn('Cannot add more items than available in stock');
-          return prevCartItems;
+          stockLimitReached = true;
+          return prevCartItems; // No cambia el carrito si se excede el stock
         }
         
-        // If the product is already in the cart, update the quantity
+        // Actualizar la cantidad si está dentro del stock disponible
         return prevCartItems.map((item) =>
           item.id === product.id ? { ...item, quantity: newQuantity } : item
         );
       } else {
-        // Validate quantity against stock before adding
+        // Validar la cantidad solicitada antes de añadir al carrito
         if (quantity > product.stock) {
-          console.warn('Cannot add more items than available in stock');
-          return prevCartItems;
+          stockLimitReached = true;
+          return prevCartItems; // No cambia el carrito si se excede el stock
         }
-        // If the product is not in the cart, add it with the specified quantity
+        // Añadir el producto al carrito con la cantidad especificada si el stock lo permite
         return [...prevCartItems, { ...product, quantity }];
       }
     });
+  
+    // Actualizar showStockLimitAlert basado en si el stock se excedió
+    if (stockLimitReached) {
+      setShowStockLimitAlert(true);
+      setTimeout(() => setShowStockLimitAlert(false), 3000);
+    }
+  
+    return stockLimitReached;
   };
 
   // Remove item from cart
@@ -111,6 +122,35 @@ const useCart = () => {
     setCartItems([]);
   };
 
+  const handleAddToCart1 = (product, quantity = 1) => {
+    let stockLimitReached = false;
+  
+    setCartItems((prevCartItems) => {
+      const existingItem = prevCartItems.find((item) => item.id === product.id);
+  
+      if (existingItem) {
+        const newQuantity = existingItem.quantity + quantity;
+        if (newQuantity > product.stock) {
+          stockLimitReached = true;
+          setShowStockLimitAlert(true);
+          setTimeout(() => setShowStockLimitAlert(false), 3000);
+          return prevCartItems;
+        }
+        return prevCartItems.map((item) =>
+          item.id === product.id ? { ...item, quantity: newQuantity } : item
+        );
+      } else if (quantity > product.stock) {
+        stockLimitReached = true;
+        setShowStockLimitAlert(true);
+        setTimeout(() => setShowStockLimitAlert(false), 3000);
+        return prevCartItems;
+      }
+      return [...prevCartItems, { ...product, quantity }];
+    });
+  
+    return stockLimitReached;
+  };
+
   return {
     cartItems,
     handleAddToCart,
@@ -121,6 +161,8 @@ const useCart = () => {
     getTotalItems,
     getTotalPrice,
     clearCart,
+    showStockLimitAlert,
+    handleAddToCart1,
   };
 };
 

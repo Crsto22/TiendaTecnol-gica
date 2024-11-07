@@ -12,14 +12,16 @@ import {
   Store,
   Tag,
   Percent,
-  Menu
+  Menu,
+  Check
 } from 'lucide-react';
 
 import products from '../data/products';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import useWishlist from '../hooks/useWishlist';
 import useCart from '../hooks/useCart';
+import WishlistAlert from '../components/WishlistAlert';
 
 const ProductCatalog = ( ) => {
 
@@ -33,14 +35,40 @@ const ProductCatalog = ( ) => {
   const uniqueBrands = [...new Set(products.map(p => p.brand))];
   const uniqueCategories = [...new Set(products.map(p => p.category))];
 
-  const { handleAddToCart, isInCart } = useCart();
+
+
+  const [showAddedNotification, setShowAddedNotification] = useState(false);
 
   
-  const { 
-    addToWishlist, 
-    removeFromWishlist, 
-    isInWishlist 
-  } = useWishlist();
+  const { handleAddToCart, isInCart, showStockLimitAlert,stockLimitReached } = useCart();
+
+  const [notifications, setNotifications] = useState([]);
+  
+  const handleAddToCartAndNotify = (product) => {
+
+    const stockLimitReached = handleAddToCart(product);
+    const newNotification = {
+      type: stockLimitReached ? 'stock-limit' : 'added',
+      id: Date.now(),
+    };
+  
+    setNotifications((prevNotifications) => [...prevNotifications, newNotification]);
+  
+    const timeoutId = setTimeout(() => {
+      setNotifications((prevNotifications) =>
+        prevNotifications.filter((n) => n.id !== newNotification.id)
+      );
+    }, 2500);
+  
+    return () => clearTimeout(timeoutId);
+  };
+
+  
+
+  
+ 
+
+  const { wishlistItems, addToWishlist, removeFromWishlist, isInWishlist, alerts } = useWishlist();
 
   const handleWishlistToggle = (e, product) => {
     e.preventDefault(); // Prevent navigation from Link
@@ -85,9 +113,6 @@ const ProductCatalog = ( ) => {
       return matchesSearch && matchesBrand && matchesCategory && matchesPrice;
     })
     .sort((a, b) => sortOrder === 'asc' ? a.price - b.price : b.price - a.price);
-
-    
-   
 
   const Sidebar = () => (
     <div className="bg-base-100 p-6 rounded-lg shadow-lg space-y-6">
@@ -153,8 +178,9 @@ const ProductCatalog = ( ) => {
   );
 
   return (
+    
     <div className="mt-28 bg-base-200 p-6">
-      {/* Header */}
+      
       
 
       {/* Mobile Filters Button */}
@@ -266,15 +292,15 @@ const ProductCatalog = ( ) => {
               <div className="card-actions justify-between items-center mt-4">
                 <span className="text-2xl font-bold">S/{product.price}</span>
                 <button 
-                  className="btn bg-red-600 text-white hover:bg-red-700 gap-2"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    handleAddToCart(product);
-                  }}
-                >
-                  <ShoppingCart size={20} />
-                  Agregar
-                </button>
+        className="btn bg-red-600 text-white hover:bg-red-700 gap-2"
+        onClick={(e) => {
+          e.preventDefault();
+          handleAddToCartAndNotify(product);
+        }}
+      >
+        <ShoppingCart size={20} />
+        Agregar
+      </button>
               </div>
             </div>
           </motion.div>
@@ -298,6 +324,68 @@ const ProductCatalog = ( ) => {
           )}
         </div>
       </div>
+      <WishlistAlert alerts={alerts} />
+      <AnimatePresence>
+      {notifications.map((notification) => (
+        <motion.div
+          key={notification.id}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: 20 }}
+          className={`bg-${
+            notification.type === 'stock-limit' ? 'red-500 ' : 'green-500 '
+          }  px-6 py-4 rounded-xl shadow-xl fixed top-32 right-4  flex items-center space-x-3`}
+        >
+          <div
+            className={`p-3 rounded-full ${
+              notification.type === 'stock-limit'
+                ? 'bg-red-600 0'
+                : 'bg-green-600 '
+            }`}
+          >
+            {notification.type === 'stock-limit' ? (
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-5 w-5 text-white"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                  clipRule="evenodd"
+                />
+              </svg>
+            ) : (
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-5 w-5 text-white"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                  clipRule="evenodd"
+                />
+              </svg>
+            )}
+          </div>
+          <div>
+            <h3 className="text-lg text-white font-semibold">
+              {notification.type === 'stock-limit'
+                ? 'No se pueden agregar más productos'
+                : 'Articulo agregado'}
+            </h3>
+            <p className="text-sm text-white">
+              {notification.type === 'stock-limit'
+                ? 'La cantidad solicitada excede el stock disponible.'
+                : 'El artículo ha sido agregado a su carrito.'}
+            </p>
+          </div>
+        </motion.div>
+      ))}
+    </AnimatePresence>
     </div>
   );
 };

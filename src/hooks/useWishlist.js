@@ -1,11 +1,9 @@
-//hooks/useWishlist.js
 import { useEffect, useState } from 'react';
 import { atom, useAtom } from 'jotai';
 import products from '../data/products';
 
 const WISHLIST_STORAGE_KEY = 'wishlist_ids';
 
-// Inicializamos el átomo con los datos del localStorage
 const wishlistAtom = atom(
   typeof window !== 'undefined' 
     ? JSON.parse(localStorage.getItem(WISHLIST_STORAGE_KEY) || '[]')
@@ -17,6 +15,7 @@ const useWishlist = () => {
   const [isInitialized, setIsInitialized] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [currentProduct, setCurrentProduct] = useState(null);
+  const [alerts, setAlerts] = useState([]);
 
   // Efecto para cargar datos iniciales
   useEffect(() => {
@@ -44,10 +43,40 @@ const useWishlist = () => {
     }
   }, [wishlistIds, isInitialized]);
 
+  
+
   // Obtener productos completos basados en los IDs guardados
   const wishlistItems = wishlistIds.map(id => 
     products.find(product => product.id === id)
   ).filter(Boolean);
+
+
+  
+
+  const isInWishlist = (productId) => wishlistIds.includes(productId);
+
+  const closeModal = () => {
+    setModalOpen(false);
+    setCurrentProduct(null);
+  };
+
+
+
+  
+  const showAlert = (message, type) => {
+    const newAlert = {
+      id: Date.now(), // Usamos timestamp como ID único
+      message,
+      type
+    };
+    
+    setAlerts(prev => [...prev, newAlert]);
+    
+    // Eliminar la alerta después de 3 segundos
+    setTimeout(() => {
+      setAlerts(prev => prev.filter(alert => alert.id !== newAlert.id));
+    }, 2500);
+  };
 
   const addToWishlist = (product) => {
     if (!product?.id) {
@@ -59,6 +88,7 @@ const useWishlist = () => {
       if (!prev.includes(product.id)) {
         setModalOpen(true);
         setCurrentProduct(product);
+        showAlert('¡Producto añadido a tu lista de deseos!', 'success');
         return [...prev, product.id];
       }
       return prev;
@@ -67,17 +97,12 @@ const useWishlist = () => {
 
   const removeFromWishlist = (productId) => {
     setWishlistIds(prev => {
-      console.log('Removiendo producto:', productId);
+      showAlert('Producto eliminado de tu lista de deseos', 'error');
       return prev.filter(id => id !== productId);
     });
   };
 
-  const isInWishlist = (productId) => wishlistIds.includes(productId);
-
-  const closeModal = () => {
-    setModalOpen(false);
-    setCurrentProduct(null);
-  };
+  // ... resto de tus funciones ...
 
   return {
     wishlistItems,
@@ -87,6 +112,7 @@ const useWishlist = () => {
     modalOpen,
     closeModal,
     currentProduct,
+    alerts
   };
 };
 

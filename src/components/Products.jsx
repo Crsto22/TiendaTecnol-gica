@@ -1,15 +1,18 @@
 import React, { useCallback, useState } from 'react';
 import useEmblaCarousel from 'embla-carousel-react';
-import { ChevronLeft, ChevronRight, Eye, Heart,ArrowRightFromLine } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Eye, Heart, ArrowRightFromLine, CheckCircle, XCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Autoplay from 'embla-carousel-autoplay';
 import ClassNames from 'embla-carousel-class-names';
 import products from '../data/products';
 import { Link } from 'react-router-dom';
 import useWishlist from '../hooks/useWishlist';
+import WishlistAlert from './WishlistAlert';
 
 const Products = () => {
-  const { wishlistItems, addToWishlist, removeFromWishlist, isInWishlist } = useWishlist(); // Usa las funciones de la lista de deseos
+
+  const { wishlistItems, addToWishlist, removeFromWishlist, isInWishlist, alerts } = useWishlist();
+
   const [emblaRef, emblaApi1] = useEmblaCarousel(
     { 
       align: 'start',
@@ -59,19 +62,22 @@ const Products = () => {
 
   const formatPrice = (price) => `S/ ${price.toFixed(2)}`;
 
+
   return (
     <motion.div 
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       className="bg-gradient-to-br from-gray-50 to-gray-100 p-8"
     >
+         {/* Usamos el componente WishlistAlert */}
+         <WishlistAlert alerts={alerts} />
       <AnimatePresence>
   {selectedProduct && (
     <motion.div 
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" 
+      className="fixed inset-0 bg-black/50 flex items-center justify-center z-40" 
       onClick={() => setSelectedProduct(null)}
     >
       <motion.div 
@@ -139,22 +145,26 @@ const Products = () => {
                 </motion.button>
               </Link>
               <motion.button 
-  whileHover={{ scale: 1.1 }}
-  whileTap={{ scale: 0.9 }}
-  onClick={(e) => {
-    e.stopPropagation(); // Evita que el evento cierre el modal
-    if (isInWishlist(selectedProduct.id)) {
-      removeFromWishlist(selectedProduct.id);
-    } else {
-      addToWishlist(selectedProduct);
-    }
-  }}
-  className={`p-3 border rounded-xl transition-colors ${
-    isInWishlist(selectedProduct.id) ? 'bg-red-500 text-white' : 'border-gray-200 hover:bg-gray-50'
-  }`}
->
-  <Heart className="w-5 h-5" />
-</motion.button>
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (isInWishlist(selectedProduct.id)) {
+                    removeFromWishlist(selectedProduct.id);
+                  } else {
+                    addToWishlist(selectedProduct);
+                  }
+                }}
+                className={`p-3 border rounded-xl transition-colors ${
+                  isInWishlist(selectedProduct.id) 
+                    ? 'bg-red-500 text-white' 
+                    : 'border-gray-200 hover:bg-gray-50'
+                }`}
+              >
+                <Heart className={`w-5 h-5 ${
+                  isInWishlist(selectedProduct.id) ? 'fill-current' : ''
+                }`} />
+              </motion.button>
             </motion.div>
           </motion.div>
         </div>

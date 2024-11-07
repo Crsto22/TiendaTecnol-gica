@@ -6,6 +6,7 @@ import products from '../data/products';
 import { Package, SearchX, RefreshCw, ArrowLeft, Home } from 'lucide-react';
 import useWishlist from '../hooks/useWishlist';
 import useCart from '../hooks/useCart';
+import WishlistAlert from '../components/WishlistAlert';
 
 const ProductDetail = () => {
   const { id } = useParams();
@@ -112,8 +113,30 @@ const ProductDetail = () => {
   const { handleAddToCart } = useCart();
   
 
-  const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist(); // Desestructuramos las funciones y el estado del hook
+  const { wishlistItems, addToWishlist, removeFromWishlist, isInWishlist, alerts } = useWishlist(); // Desestructuramos las funciones y el estado del hook
   const isWishlisted = isInWishlist(product.id); // Determina si el producto está en la lista de deseos
+
+  const [notifications, setNotifications] = useState([]);
+  
+  const {  handleAddToCart1 } = useCart();
+
+  const handleAddToCartAndNotify = (product) => {
+    const stockLimitReached = handleAddToCart1(product, quantity);
+    const newNotification = {
+      type: stockLimitReached ? 'stock-limit' : 'added',
+      id: Date.now(),
+    };
+  
+    setNotifications((prevNotifications) => [...prevNotifications, newNotification]);
+  
+    const timeoutId = setTimeout(() => {
+      setNotifications((prevNotifications) =>
+        prevNotifications.filter((n) => n.id !== newNotification.id)
+      );
+    }, 2500);
+  
+    return () => clearTimeout(timeoutId);
+  };
 
 
   return (
@@ -158,21 +181,69 @@ const ProductDetail = () => {
         </motion.div>
         <label className="modal-backdrop" htmlFor="image-modal">Close</label>
       </div>
-
+      <WishlistAlert alerts={alerts} />
       {/* Notification */}
       <AnimatePresence>
-        {showAddedNotification && (
-          <motion.div 
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: 20 }}
-            className="alert alert-success fixed top-4 right-4 w-auto"
+      {notifications.map((notification) => (
+        <motion.div
+          key={notification.id}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: 20 }}
+          className={`bg-${
+            notification.type === 'stock-limit' ? 'red-500 z-50' : 'green-500 z-50'
+          }  px-6 py-4 rounded-xl shadow-xl fixed top-32 right-4  flex items-center space-x-3`}
+        >
+          <div
+            className={`p-3 rounded-full ${
+              notification.type === 'stock-limit'
+                ? 'bg-red-600 '
+                : 'bg-green-600 '
+            }`}
           >
-            <Check size={20} />
-            <span>Agregado al carrito</span>
-          </motion.div>
-        )}
-      </AnimatePresence>
+            {notification.type === 'stock-limit' ? (
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-5 w-5 text-white"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                  clipRule="evenodd"
+                />
+              </svg>
+            ) : (
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-5 w-5 text-white"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                  clipRule="evenodd"
+                />
+              </svg>
+            )}
+          </div>
+          <div>
+            <h3 className="text-lg text-white font-semibold">
+              {notification.type === 'stock-limit'
+                ? 'No se pueden agregar más productos'
+                : 'Articulo agregado'}
+            </h3>
+            <p className="text-sm text-white">
+              {notification.type === 'stock-limit'
+                ? 'La cantidad solicitada excede el stock disponible.'
+                : 'El artículo ha sido agregado a su carrito.'}
+            </p>
+          </div>
+        </motion.div>
+      ))}
+    </AnimatePresence>
       
       <div className="max-w-7xl mx-auto px-4 py-8 lg:py-16">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
@@ -337,9 +408,8 @@ const ProductDetail = () => {
   whileHover={{ scale: 1.02 }}
   whileTap={{ scale: 0.98 }}
   onClick={() => {
-    handleAddToCart(product, quantity);
-    setShowAddedNotification(true);
-    setTimeout(() => setShowAddedNotification(false), 2000);
+    handleAddToCartAndNotify(product);
+      
   }}
   className="btn bg-red-600 text-white hover:bg-black w-full"
 >
@@ -372,6 +442,7 @@ const ProductDetail = () => {
         </div>
       </div>
     </motion.div>
+    
   );
 };
 

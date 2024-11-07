@@ -142,9 +142,9 @@ const ShoppingCart = () => {
                 </motion.div>
               ))}
               <div className="flex justify-center mt-8">
-        <button className="btn bg-red-600 text-white hover:bg-red-700">
+                <Link to="/contacts " className="btn bg-red-600 text-white hover:bg-red-700" > 
           Proceder al Checkout (S/. {totalPrice.toFixed(2)})
-        </button>
+        </Link>
       </div>
             </motion.div>
           ) : (
